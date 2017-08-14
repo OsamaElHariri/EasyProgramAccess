@@ -1,10 +1,12 @@
 ﻿using System.Diagnostics;
+using Newtonsoft.Json;
 using PubnubApi;
 
 namespace Watsys
 {
     class RealTimePN
     {
+        private static FirebaseRest _fbr;
 
 
         public static Pubnub QuickConfigure(string subKey, string pubKey = "", string uuid = "tempId")
@@ -31,8 +33,10 @@ namespace Watsys
             pubnub.AddListener(new SubscribeCallbackExt(
                 (pubnubObj, message) =>
                 {
-                    Debug.WriteLine("Message Recieved!");
-                    // Handle new message stored in message.Message 
+                    // Handle new message stored in message.Message
+                    Debug.Write("Message Recieved");
+                    InfoPN info = JsonConvert.DeserializeObject<InfoPN>(message.Message.ToString());
+                    new InfoHandler(_fbr).Handle(info);
                 },
     (pubnubObj, presence) =>
     {
@@ -125,6 +129,10 @@ namespace Watsys
         }
 
 
+        public static void SetFirebaseRest(FirebaseRest fb)
+        {
+            _fbr = fb;
+        }
 
 
     }

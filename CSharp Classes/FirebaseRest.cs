@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Text;
@@ -148,8 +149,10 @@ namespace Watsys
             }
 
             string url = Child(user).Child("groups").Child(grpName).Child("paths").Build();
+            string urlDate = Child(user).Child("groups").Child(grpName).Child("date added").Build();
 
             Put(url, paths);
+            Put(urlDate, DateTime.Now.ToString("G"));
 
         }
 
