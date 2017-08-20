@@ -5,7 +5,7 @@ using System.Net;
 using System.Text;
 using Newtonsoft.Json;
 
-namespace Watsys
+namespace EasyProgramAccess
 {
     class FirebaseRest
     {
@@ -49,7 +49,7 @@ namespace Watsys
             return this;
         }
 
-        
+
 
         public FirebaseRest Print(string prnt)
         {
@@ -61,6 +61,12 @@ namespace Watsys
         {
             return Print("pretty");
 
+        }
+
+        public FirebaseRest Shallow()
+        {
+            _queries.Add("shallow=true");
+            return this;
         }
 
 
@@ -78,11 +84,23 @@ namespace Watsys
                 url += "&" + query;
             }
 
+            CleanLists();
+
             return url;
         }
-        
 
-        public static string Get(string url)
+
+        // Clears the query and children arrays
+        public void CleanLists()
+        {
+            _children.Clear();
+            _queries.Clear();
+            _orderBy = "";
+        }
+
+
+        // HTTP GET request
+        public string Get(string url)
         {
             string jString;
 
@@ -96,28 +114,34 @@ namespace Watsys
                 jString = reader.ReadToEnd();
             }
 
+
             return jString;
         }
 
 
-        public static string Put(string url, object msg)
+
+        
+        // HTTP PUT request
+        public string Put(string url, object msg)
         {
             return MethodHelper(url, msg, "PUT");
         }
 
-        public static string Post(string url, object msg)
+        // HTTP POST request
+        public string Post(string url, object msg)
         {
             return MethodHelper(url, msg, "POST");
         }
 
-        public static string Patch(string url, object msg)
+        // HTTP PATCH request
+        public string Patch(string url, object msg)
         {
             return MethodHelper(url, msg, "PATCH");
         }
 
 
         // Helper method to eliminate reduntant code between methods like POST and PUT
-        private static string MethodHelper(string url, object msg, string method)
+        private string MethodHelper(string url, object msg, string method)
         {
             var json = JsonConvert.SerializeObject(msg);
 
@@ -131,6 +155,22 @@ namespace Watsys
             json = new StreamReader(response.GetResponseStream()).ReadToEnd();
 
             return json;
+        }
+
+
+        // HTTP DELETE request
+        // Param: grpName: The name of the group to DELETE
+        // Param: user: Under what user is the group to DELETE
+        public string Delete(string grpName, string user)
+        {
+
+            string url = Child(user).Child("groups").Child(grpName).Build();
+
+            WebRequest request = WebRequest.Create(url);
+            request.Method = "DELETE";
+
+            HttpWebResponse response = (HttpWebResponse)request.GetResponse();
+            return response.ToString();
         }
 
 
@@ -149,10 +189,12 @@ namespace Watsys
             }
 
             string url = Child(user).Child("groups").Child(grpName).Child("paths").Build();
-            string urlDate = Child(user).Child("groups").Child(grpName).Child("date added").Build();
+            string urlDate = Child(user).Child("groups").Child(grpName).Child("dateadded").Build();
+            string urlRecent = Child(user).Child("groups").Child(grpName).Child("dateopened").Build();
 
             Put(url, paths);
             Put(urlDate, DateTime.Now.ToString("G"));
+            Put(urlRecent, DateTime.Now.ToString("G"));
 
         }
 
@@ -165,9 +207,24 @@ namespace Watsys
             string url = Child(user).Child("groups").Child(grpName).Child("paths").Build();
             string[] processes = JsonConvert.DeserializeObject<string[]>(Get(url));
             Patherian.OpenProcesses(processes);
+            string urlRecent = Child(user).Child("groups").Child(grpName).Child("dateopened").Build();
+            Put(urlRecent, DateTime.Now.ToString("G"));
 
+
+        }
+
+        // Get the names of all the groups under a user
+        public Dictionary<string, PathGroup> GetGroupNames(string user)
+        {
+            string url = Child(user).Child("groups").Build();
+            Dictionary<string, PathGroup> groups = JsonConvert.DeserializeObject<Dictionary<string, PathGroup>>(Get(url));
+
+            
+
+            return groups;
         }
 
 
     }
 }
+

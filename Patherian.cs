@@ -4,10 +4,11 @@ using System.Diagnostics;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Threading.Tasks;
 using System.Windows.Automation;
 using System.Windows.Forms;
 
-namespace Watsys
+namespace EasyProgramAccess
 {
     class Patherian
     {
@@ -98,6 +99,10 @@ namespace Watsys
         // Returns the name and url of all open chrome tabs in a window
         public static IDictionary<string, string> GetChromeNameAndUrl(IntPtr handle, string title)
         {
+            // Bring the browser forward
+            ShowWindow(handle, 3);
+            SetForegroundWindow(handle);
+
             Dictionary<string, string> chromeTab = new Dictionary<string, string>();
             var trimmedTitle = title.Substring(0, title.Length - 16);
 
@@ -113,11 +118,7 @@ namespace Watsys
 
             // Store the UI element that holds the Url
             AutomationElement elmUrlBar = GetChromeUrlBar(handle);
-
-            // Bring the browser forward
-            ShowWindow(handle, 3);
-            SetForegroundWindow(handle);
-
+            
             // For each tab, read the Url, and press ctrl + TAB to move on to the next tab
             foreach (AutomationElement tabitem in elmTabStrip.FindAll(TreeScope.Children, condTabItem))
             {
@@ -128,7 +129,7 @@ namespace Watsys
                     continue;
                 }
                 chromeTab[tabitem.Current.Name] = url;
-                
+
 
             }
 
@@ -139,8 +140,12 @@ namespace Watsys
         // Returns the name and url of all open firefox tabs in a window
         public static IDictionary<string, string> GetFirefoxNameAndUrl(IntPtr handle, string title)
         {
+            // Bring the browser forward
+            ShowWindow(handle, 3);
+            SetForegroundWindow(handle);
+
             Dictionary<string, string> firefoxTab = new Dictionary<string, string>();
-           
+
             var trimmedTitle = title.Substring(0, title.Length - 18);
 
             // to find the tabs we first need to locate something reliable - the 'New Tab' button 
@@ -155,11 +160,7 @@ namespace Watsys
 
             // Store the UI element that holds the Url
             AutomationElement elmUrlBar = GetFirefoxUrlBar(handle);
-
-            // Bring the browser forward
-            ShowWindow(handle, 3);
-            SetForegroundWindow(handle);
-
+            
             // For each tab, read the Url, and press ctrl + TAB to move on to the next tab
             foreach (AutomationElement tabitem in elmTabStrip.FindAll(TreeScope.Children, condTabItem))
             {
@@ -224,7 +225,7 @@ namespace Watsys
                 string path = OpenWindowGetter.GetProcessPath(handle);
 
                 // Leave the System process alone
-                if ("WINDOWS".Equals(title) || "Photos".Equals(title) || "Calculator".Equals(title) || "Settings".Equals(title) || "file:///C:/Users/user/Source/Workspaces/WindowFinder/WindowFinder/bin/Debug/WindowFinder.EXE".Equals(title))
+                if ("WINDOWS".Equals(title) || "Photos".Equals(title) || "Calculator".Equals(title) || "Settings".Equals(title) || "Easy Program Access".Equals(title))
                 {
                     continue;
                 }
@@ -278,7 +279,7 @@ namespace Watsys
                 }
 
                 windowInfo[title] = path;
-
+                
                 if (storedFirst) continue;
                 storedFirst = true;
                 firstHandle = handle;
@@ -296,8 +297,6 @@ namespace Watsys
         // Closes all the open process windows
         public static void CloseAllProcesses()
         {
-            Dictionary<string, string> windowInfo = new Dictionary<string, string>();
-
             foreach (KeyValuePair<IntPtr, string> window in OpenWindowGetter.GetOpenWindows())
             {
                 IntPtr handle = window.Key;
@@ -306,9 +305,7 @@ namespace Watsys
 
                 // Leave the System process alone
                 if ("WINDOWS".Equals(title) || "Photos".Equals(title) || "Calculator".Equals(title) ||
-                    "Settings".Equals(title) ||
-                    "file:///C:/Users/user/Source/Workspaces/WindowFinder/WindowFinder/bin/Debug/WindowFinder.EXE"
-                        .Equals(title))
+                    "Settings".Equals(title) || "Easy Program Access".Equals(title))
                 {
                     continue;
                 }
@@ -321,6 +318,7 @@ namespace Watsys
         // Shut down the computer
         public static void ShutDown()
         {
+            CloseAllProcesses();
             var psi = new ProcessStartInfo("shutdown", "/s /t 0");
             psi.CreateNoWindow = true;
             psi.UseShellExecute = false;
@@ -405,5 +403,4 @@ namespace Watsys
         }
     }
 }
-    
 
