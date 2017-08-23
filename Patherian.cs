@@ -10,6 +10,8 @@ using System.Windows.Forms;
 
 namespace EasyProgramAccess
 {
+    // This class handles getting the paths of the various open applications
+    // For example, it gets the url's of open tabs in all browser, the path in all Windows Explorers, and the paths of other open applications
     class Patherian
     {
         [DllImport("user32.dll")]
@@ -22,8 +24,8 @@ namespace EasyProgramAccess
 
         private const int WM_CLOSE = 0x0010;
 
-        // Expects an array of paths.
         // Opens all paths in the given array
+        // Expects an array of strings as paths (eg. {"C:\\Program Files\\SomePath\\app.exe", "https://www.google.com"}).
         public static void OpenProcesses(string[] paths)
         {
             foreach (string path in paths)
@@ -34,11 +36,14 @@ namespace EasyProgramAccess
                 }
                 catch (Exception)
                 {
-
+                    // Skip the faulty path and move on to the next one
                     continue;
                 }
             }
         }
+
+        // Opens all paths in the given array
+        // Expects a list of strings as paths.
         public static void OpenProcesses(List<string> paths)
         {
             foreach (string path in paths)
@@ -49,7 +54,7 @@ namespace EasyProgramAccess
                 }
                 catch (Exception)
                 {
-
+                    // Skip the faulty path and move on to the next one
                     continue;
                 }
             }
@@ -62,6 +67,7 @@ namespace EasyProgramAccess
         {
             try
             {
+                // Since the elmUrlBar is the URL bar in some browser, reading the value will give the url of the open tab
                 string url = ((ValuePattern)elmUrlBar.GetCurrentPattern(ValuePattern.Pattern)).Current.Value;
                 if ("".Equals(url))
                 {
@@ -104,13 +110,14 @@ namespace EasyProgramAccess
             SetForegroundWindow(handle);
 
             Dictionary<string, string> chromeTab = new Dictionary<string, string>();
+            // The title is trimmed because it contains the string " - Google Chrome" at the end
             var trimmedTitle = title.Substring(0, title.Length - 16);
 
-            // to find the tabs we first need to locate something reliable - the 'New Tab' button 
+            // to find the tabs, we first find the tab that is currently open and has the title that is the same as the title of the prowser handle 
             AutomationElement root = AutomationElement.FromHandle(handle);
             Condition condNewTab = new PropertyCondition(AutomationElement.NameProperty, trimmedTitle + "");
             AutomationElement elmNewTab = root.FindFirst(TreeScope.Descendants, condNewTab);
-            // get the tabstrip by getting the parent of the 'new tab' button 
+            // get the tabstrip by getting the parent of the tab we found 
             TreeWalker treewalker = TreeWalker.ControlViewWalker;
             AutomationElement elmTabStrip = treewalker.GetParent(elmNewTab);
             // loop through all the tabs and get the names which is the page title 
@@ -120,6 +127,7 @@ namespace EasyProgramAccess
             AutomationElement elmUrlBar = GetChromeUrlBar(handle);
             
             // For each tab, read the Url, and press ctrl + TAB to move on to the next tab
+            // This is done because reading the URL bar only gives the URL of the open tab
             foreach (AutomationElement tabitem in elmTabStrip.FindAll(TreeScope.Children, condTabItem))
             {
                 SendKeys.SendWait("^{TAB}");
@@ -145,14 +153,14 @@ namespace EasyProgramAccess
             SetForegroundWindow(handle);
 
             Dictionary<string, string> firefoxTab = new Dictionary<string, string>();
-
+            // The title is trimmed because it contains the string " - Mozilla Firefox" at the end
             var trimmedTitle = title.Substring(0, title.Length - 18);
 
-            // to find the tabs we first need to locate something reliable - the 'New Tab' button 
+            // to find the tabs, we first find the tab that is currently open and has the title that is the same as the title of the prowser handle
             AutomationElement root = AutomationElement.FromHandle(handle);
             Condition condNewTab = new PropertyCondition(AutomationElement.NameProperty, trimmedTitle + "");
             AutomationElement elmNewTab = root.FindFirst(TreeScope.Descendants, condNewTab);
-            // get the tabstrip by getting the parent of the 'new tab' button 
+            // get the tabstrip by getting the parent of the tab we found 
             TreeWalker treewalker = TreeWalker.ControlViewWalker;
             AutomationElement elmTabStrip = treewalker.GetParent(elmNewTab);
             // loop through all the tabs and get the names which is the page title 
@@ -162,6 +170,7 @@ namespace EasyProgramAccess
             AutomationElement elmUrlBar = GetFirefoxUrlBar(handle);
             
             // For each tab, read the Url, and press ctrl + TAB to move on to the next tab
+            // This is done because reading the URL bar only gives the URL of the open tab
             foreach (AutomationElement tabitem in elmTabStrip.FindAll(TreeScope.Children, condTabItem))
             {
                 var url = GetUrlInUrlBar(elmUrlBar);
@@ -188,6 +197,7 @@ namespace EasyProgramAccess
             AutomationElement elm1 = elm.FindFirst(TreeScope.Children,
               new PropertyCondition(AutomationElement.NameProperty, "Google Chrome"));
             AutomationElement elm2 = TreeWalker.RawViewWalker.GetLastChild(elm1);
+            // "Address and search bar" is the name of the URL bar UI Element in Google Chrome
             AutomationElement elmUrlBar = elm2.FindFirst(TreeScope.Descendants,
               new PropertyCondition(AutomationElement.NameProperty, "Address and search bar"));
 
@@ -200,7 +210,9 @@ namespace EasyProgramAccess
         {
             // find the automation element
             AutomationElement element = AutomationElement.FromHandle(handle);
+            // "Search or enter address" is the name of the URL bar UI Element in Firefox, as well as another element
             var nameCondition = new PropertyCondition(AutomationElement.NameProperty, "Search or enter address");
+            // We need the UI element with name "Search or enter address" AND type Edit to get the URL bar
             var controlCondition = new PropertyCondition(AutomationElement.ControlTypeProperty, ControlType.Edit);
             var condition = new AndCondition(nameCondition, controlCondition);
             AutomationElement editBox = element.FindFirst(TreeScope.Subtree, condition);
@@ -211,10 +223,11 @@ namespace EasyProgramAccess
 
 
         // Get names and paths of all open processes
+        // This is the central method of this class
         public static Dictionary<string, string> GetAllPaths()
         {
             Dictionary<string, string> windowInfo = new Dictionary<string, string>();
-            //Process.Start("C:\\Program Files");
+            // firstHandle and storedFirst will be used to return the foremost window to the foreground, since browsers might have jumped to the front
             IntPtr firstHandle = new IntPtr();
             bool storedFirst = false;
 
@@ -224,13 +237,13 @@ namespace EasyProgramAccess
                 string title = window.Value;
                 string path = OpenWindowGetter.GetProcessPath(handle);
 
-                // Leave the System process alone
+                // Leave the System processes alone, as well as this application
                 if ("WINDOWS".Equals(title) || "Photos".Equals(title) || "Calculator".Equals(title) || "Settings".Equals(title) || "Easy Program Access".Equals(title))
                 {
                     continue;
                 }
 
-
+                // Call the method that gets the Windows Explorer paths
                 if (path.ToLower().Contains("C:\\WINDOWS\\Explorer.EXE".ToLower()))
                 {
                     try
@@ -245,7 +258,7 @@ namespace EasyProgramAccess
                     continue;
                 }
 
-
+                // Call the method that gets the Chrome paths
                 if (path.ToLower().Contains("Google\\Chrome\\Application\\chrome.exe".ToLower()))
                 {
                     try
@@ -263,6 +276,7 @@ namespace EasyProgramAccess
 
                 }
 
+                // Call the method that gets the Firefox paths
                 if (path.ToLower().Contains("Mozilla Firefox\\firefox.exe".ToLower()))
                 {
                     try
@@ -278,6 +292,7 @@ namespace EasyProgramAccess
                     continue;
                 }
 
+                // If we reached here, then the path is stored as is
                 windowInfo[title] = path;
                 
                 if (storedFirst) continue;

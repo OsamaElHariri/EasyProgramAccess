@@ -7,6 +7,8 @@ using Newtonsoft.Json;
 
 namespace EasyProgramAccess
 {
+    // This class interacts with Firebase's REST API to execute various calls like GET, PUT, and DELETE requests
+    // This class also contains method that allow for the building of a URL to be used to query the Firebase database
     class FirebaseRest
     {
         private string _baseUrl;
@@ -15,7 +17,7 @@ namespace EasyProgramAccess
         private List<string> _queries = new List<string>();
         private string _orderBy = "";
 
-        // Expects the url without the .json at the end
+        // Expects the url without the .json at the end and the authentication token that is found in the "Secrets" in the Firebase Console
         public FirebaseRest(string url, string authenticationToken)
         {
             _baseUrl = url;
@@ -23,7 +25,7 @@ namespace EasyProgramAccess
 
         }
 
-        // This is used to go lower down in the nesting of the database
+        // This is used to go lower down in the nesting of the database (eg FIREBASEURL/child/lowerchild/lowerchild)
         public FirebaseRest Child(string child)
         {
             _children.Add(child);
@@ -37,39 +39,42 @@ namespace EasyProgramAccess
             return this;
         }
 
+        // This is used to add an equalTo query
         public FirebaseRest EqualTo(string eq)
         {
             _queries.Add("equalTo=\"" + eq + "\"");
             return this;
         }
 
+        // This is used to add an equalTo query
         public FirebaseRest EqualTo(int eq)
         {
             _queries.Add("equalTo=" + eq);
             return this;
         }
 
-
-
+        // This is used to add a print query
         public FirebaseRest Print(string prnt)
         {
             _queries.Add("print=" + prnt);
             return this;
         }
 
+        // This is used to add print=pretty to the url. It is a quicker version of the Print() method
         public FirebaseRest Pretty()
         {
             return Print("pretty");
 
         }
 
+        // This is used to add shallow=true to the url
         public FirebaseRest Shallow()
         {
             _queries.Add("shallow=true");
             return this;
         }
 
-
+        // This builds the string and returns it
         public string Build()
         {
             string url = _baseUrl;
@@ -90,7 +95,7 @@ namespace EasyProgramAccess
         }
 
 
-        // Clears the query and children arrays
+        // Clears the query and children arrays and empties the _orderBy query
         public void CleanLists()
         {
             _children.Clear();
@@ -140,7 +145,7 @@ namespace EasyProgramAccess
         }
 
 
-        // Helper method to eliminate reduntant code between methods like POST and PUT
+        // Helper method to eliminate reduntant code between methods like POST, PUT, and PATCH
         private string MethodHelper(string url, object msg, string method)
         {
             var json = JsonConvert.SerializeObject(msg);
@@ -213,13 +218,11 @@ namespace EasyProgramAccess
 
         }
 
-        // Get the names of all the groups under a user
+        // Get the information of all the groups under a user
         public Dictionary<string, PathGroup> GetGroupNames(string user)
         {
             string url = Child(user).Child("groups").Build();
             Dictionary<string, PathGroup> groups = JsonConvert.DeserializeObject<Dictionary<string, PathGroup>>(Get(url));
-
-            
 
             return groups;
         }

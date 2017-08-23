@@ -19,7 +19,7 @@ namespace EasyProgramAccess
         {
             InitializeComponent();
             
-
+            // List the information of the groups under a User
             foreach (KeyValuePair<string, PathGroup> grp in fbr.GetGroupNames(User))
             {
                 PathGroup tempGroup = grp.Value;
@@ -33,7 +33,7 @@ namespace EasyProgramAccess
 
         }
         
-        
+        // Opens the paths that are contained in the selected groups
         private void OpenGrpButton_OnClick(object sender, RoutedEventArgs e)
         {
             foreach (var item in PathItems.SelectedItems)
@@ -44,6 +44,7 @@ namespace EasyProgramAccess
             }
         }
 
+        // Creates a group whose name the user provides in the text box
         private void CreateGrpButton_OnClick(object sender, RoutedEventArgs e)
         {
             string grpName = NewNameTextBox.Text;
@@ -56,14 +57,14 @@ namespace EasyProgramAccess
             });
         }
 
+        // Deletes the selected group
         private void DeleteGrpButton_OnClick(object sender, RoutedEventArgs e)
         {
             PathGroup item = (PathGroup)PathItems.SelectedItems[0];
                 string name = item.GroupName;
                 fbr.Delete(name, User);
                 paths.Remove(item);
-
-            
         }
+        
     }
 }
