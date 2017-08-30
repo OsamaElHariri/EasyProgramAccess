@@ -125,7 +125,7 @@ namespace EasyProgramAccess
 
             // Store the UI element that holds the Url
             AutomationElement elmUrlBar = GetChromeUrlBar(handle);
-            
+
             // For each tab, read the Url, and press ctrl + TAB to move on to the next tab
             // This is done because reading the URL bar only gives the URL of the open tab
             foreach (AutomationElement tabitem in elmTabStrip.FindAll(TreeScope.Children, condTabItem))
@@ -168,7 +168,7 @@ namespace EasyProgramAccess
 
             // Store the UI element that holds the Url
             AutomationElement elmUrlBar = GetFirefoxUrlBar(handle);
-            
+
             // For each tab, read the Url, and press ctrl + TAB to move on to the next tab
             // This is done because reading the URL bar only gives the URL of the open tab
             foreach (AutomationElement tabitem in elmTabStrip.FindAll(TreeScope.Children, condTabItem))
@@ -255,6 +255,9 @@ namespace EasyProgramAccess
 
                         continue;
                     }
+                    if (storedFirst) continue;
+                    storedFirst = true;
+                    firstHandle = handle;
                     continue;
                 }
 
@@ -271,6 +274,9 @@ namespace EasyProgramAccess
 
                         continue;
                     }
+                    if (storedFirst) continue;
+                    storedFirst = true;
+                    firstHandle = handle;
                     continue;
 
 
@@ -289,12 +295,15 @@ namespace EasyProgramAccess
 
                         continue;
                     }
+                    if (storedFirst) continue;
+                    storedFirst = true;
+                    firstHandle = handle;
                     continue;
                 }
 
                 // If we reached here, then the path is stored as is
                 windowInfo[title] = path;
-                
+
                 if (storedFirst) continue;
                 storedFirst = true;
                 firstHandle = handle;
@@ -339,8 +348,6 @@ namespace EasyProgramAccess
             psi.UseShellExecute = false;
             Process.Start(psi);
         }
-
-
         /// <summary>Contains functionality to get all the open windows.</summary>
         public static class OpenWindowGetter
         {
